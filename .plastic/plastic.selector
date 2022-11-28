@@ -1,0 +1,4 @@
+repository "Prototyp platformowki@TheForget@cloud"
+  path "/"
+    br "/main"
+    co "/main"

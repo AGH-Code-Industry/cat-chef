@@ -1,9 +1,9 @@
 # CatChef
 ## Prototype 2-1
-This Repo is for CatChef project
-**Prototype by:**
-Sara Libirt
-Kamil Niechaj
+This Repo is for CatChef project\
+**Prototype by:**\
+Sara Libirt\
+Kamil Niechaj\
 Paweł Młodkowski
 
 Mechaniki do implementacji:

@@ -32,7 +32,9 @@ public class PlayerController : MonoBehaviour
 
     private void FixedUpdate() {
         ReadInput();
+        CalculateDirection();
         CalculateGroundCheck();
+        CalculateWallCheck();
 
         CalculateWalk();
         CalculateJump();
@@ -74,7 +76,7 @@ public class PlayerController : MonoBehaviour
 
     #endregion
 
-    #region Move
+    #region UpdateVelocity
 
     private float defaultGravityScale;
 
@@ -117,6 +119,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float acceleration = 70f;
     [SerializeField] private float deceleration = 70f;
     [SerializeField] private float apexSpeedBonus = 25f;
+    private Vector2 direction = Vector2.right;
 
     private void CalculateWalk() {
         if (input.x != 0) {
@@ -126,6 +129,16 @@ public class PlayerController : MonoBehaviour
         } else {
             horizontalVelocity = Mathf.MoveTowards(horizontalVelocity, 0, deceleration * Time.deltaTime);
         }
+    }
+
+    private void CalculateDirection() {
+        if (input.x > 0 && direction == Vector2.left) FlipDirection();
+        if (input.x < 0 && direction == Vector2.right) FlipDirection();
+    }
+
+    private void FlipDirection() {
+        direction = direction == Vector2.right ? Vector2.left : Vector2.right;
+        transform.Rotate(0, 180, 0);
     }
 
     #endregion
@@ -178,22 +191,44 @@ public class PlayerController : MonoBehaviour
     private void OnDrawGizmos() {
         if (!boxCollider2D) return;
         DrawGroundCheckGizmo();
+        DrawWallCheckGizmo();
     }
 
     private void DrawGroundCheckGizmo() {
         Vector2 center = boxCollider2D.bounds.center;
         Vector2 size = boxCollider2D.bounds.size - Vector3.right * groundCheckExtraHeight;
-        Vector2 direction = Vector2.down;
+        Vector2 dir = Vector2.down;
         float distance = groundCheckExtraHeight;
 
         Vector2[] corners = {
-            center + new Vector2(size.x, size.y) / 2 + direction * distance,
-            center + new Vector2(size.x, -size.y) / 2 + direction * distance,
-            center + new Vector2(-size.x, -size.y) / 2 + direction * distance,
-            center + new Vector2(-size.x, size.y) / 2 + direction * distance,
+            center + new Vector2(size.x, size.y) / 2 + dir * distance,
+            center + new Vector2(size.x, -size.y) / 2 + dir * distance,
+            center + new Vector2(-size.x, -size.y) / 2 + dir * distance,
+            center + new Vector2(-size.x, size.y) / 2 + dir * distance,
         };
 
-        Gizmos.color = Color.magenta;
+        Gizmos.color = onGround ? Color.magenta : Color.gray;
+        Gizmos.DrawLine(corners[0], corners[1]);
+        Gizmos.DrawLine(corners[1], corners[2]);
+        Gizmos.DrawLine(corners[2], corners[3]);
+        Gizmos.DrawLine(corners[3], corners[0]);
+    }
+
+    private void DrawWallCheckGizmo() {
+        float distance = wallCheckExtraWidth;
+        Vector2 center = boxCollider2D.bounds.center;
+        Vector2 size = boxCollider2D.bounds.size - Vector3.up * distance;
+        Vector2 dir = direction;
+
+        Vector2[] corners = {
+            center + new Vector2(size.x, size.y) / 2 + dir * distance,
+            center + new Vector2(size.x, -size.y) / 2 + dir * distance,
+            center + new Vector2(-size.x, -size.y) / 2 + dir * distance,
+            center + new Vector2(-size.x, size.y) / 2 + dir * distance,
+        };
+        
+        Gizmos.color = touchingWall ? Color.blue : Color.gray;
+        if (touchingWall) Gizmos.color = Color.green;
         Gizmos.DrawLine(corners[0], corners[1]);
         Gizmos.DrawLine(corners[1], corners[2]);
         Gizmos.DrawLine(corners[2], corners[3]);
@@ -204,14 +239,14 @@ public class PlayerController : MonoBehaviour
 
     #region WallJump
 
+    [Header("Wall Jump")] 
+    [SerializeField] float wallCheckExtraWidth = 0.2f;
     private bool touchingWall = false;
 
-    private void CalculateTouchingWallCheck() {
-        // float extraHeight = .5f;
-        // RaycastHit2D raycastHit = Physics2D.BoxCast(boxCollider2D.bounds.center, boxCollider2D.bounds.size - Vector3.right * extraHeight, 0f, Vector2.down, extraHeight, groundMask);
-        // touchingWall = raycastHit.collider != null;
+    private void CalculateWallCheck() {
+        RaycastHit2D raycastHit = Physics2D.BoxCast(boxCollider2D.bounds.center, boxCollider2D.bounds.size - Vector3.right * wallCheckExtraWidth, 0f, direction, wallCheckExtraWidth, groundMask);
+        touchingWall = raycastHit.collider != null;
     }
-
 
     #endregion
 }

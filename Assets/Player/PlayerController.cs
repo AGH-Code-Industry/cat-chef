@@ -145,7 +145,7 @@ public class PlayerController : MonoBehaviour
 
     private void FlipDirection() {
         direction = direction == Vector2.right ? Vector2.left : Vector2.right;
-        transform.Rotate(0, 180, 0);
+        transform.localScale = new Vector3(-transform.localScale.x, transform.localScale.y, transform.localScale.z);
     }
 
     #endregion

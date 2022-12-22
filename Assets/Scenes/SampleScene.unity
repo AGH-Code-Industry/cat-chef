@@ -1669,6 +1669,7 @@ MonoBehaviour:
   jumpBufferTime: 0.1
   groundCheckExtraHeight: 0.5
   wallCheckExtraWidth: 0.2
+  wallSlidingMaxVelocity: 3
 --- !u!4 &648073697 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3151584120760583154, guid: 7c221101fc9bb5749b9162676d4faa38, type: 3}

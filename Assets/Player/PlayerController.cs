@@ -40,6 +40,7 @@ public class PlayerController : MonoBehaviour
         CalculateJump();
         CalculateJumpEndEarly();
         CalculateJumpApex();
+        CalculateWallSlideDown();
 
         UpdateVelocity();
     }
@@ -89,6 +90,10 @@ public class PlayerController : MonoBehaviour
             velocity.y = rb.velocity.y - jumpEndEarlyGravityModifier * Time.deltaTime;
         }
         velocity.x = horizontalVelocity;
+
+        if (slidingDownTheWall) {
+            velocity.y = Mathf.Clamp(velocity.y, -wallSlidingMaxVelocity, float.MaxValue);
+        }
 
         rb.velocity = velocity;
     }
@@ -168,7 +173,6 @@ public class PlayerController : MonoBehaviour
     private void CalculateGroundCheck() {
         RaycastHit2D raycastHit = Physics2D.BoxCast(boxCollider2D.bounds.center, boxCollider2D.bounds.size - Vector3.right * groundCheckExtraHeight, 0f, Vector2.down, groundCheckExtraHeight, groundMask);
         onGround = raycastHit.collider != null;
-
     }
 
     private void CalculateJumpEndEarly() {
@@ -241,11 +245,17 @@ public class PlayerController : MonoBehaviour
 
     [Header("Wall Jump")] 
     [SerializeField] float wallCheckExtraWidth = 0.2f;
+    [SerializeField] float wallSlidingMaxVelocity = 3f;
     private bool touchingWall = false;
+    private bool slidingDownTheWall = false;
 
     private void CalculateWallCheck() {
         RaycastHit2D raycastHit = Physics2D.BoxCast(boxCollider2D.bounds.center, boxCollider2D.bounds.size - Vector3.right * wallCheckExtraWidth, 0f, direction, wallCheckExtraWidth, groundMask);
         touchingWall = raycastHit.collider != null;
+    }
+
+    private void CalculateWallSlideDown() {
+        slidingDownTheWall = touchingWall && input.x != 0;
     }
 
     #endregion

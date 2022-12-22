@@ -138,6 +138,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float jumpApexThreshold = 10f;
     [SerializeField] private float apexGravityModifier = .5f;
     [SerializeField] private float jumpBufferTime = .1f;
+    [SerializeField] private float groundCheckExtraHeight = .5f;
     private bool jumpEndedEarly = false;
     private bool onGround = false;
     private bool hasBufferedJump => input.lastJumpDownTime + jumpBufferTime > Time.time;
@@ -152,9 +153,9 @@ public class PlayerController : MonoBehaviour
     }
 
     private void CalculateGroundCheck() {
-        float extraHeight = .5f;
-        RaycastHit2D raycastHit = Physics2D.BoxCast(boxCollider2D.bounds.center, boxCollider2D.bounds.size - Vector3.right * extraHeight, 0f, Vector2.down, extraHeight, groundMask);
+        RaycastHit2D raycastHit = Physics2D.BoxCast(boxCollider2D.bounds.center, boxCollider2D.bounds.size - Vector3.right * groundCheckExtraHeight, 0f, Vector2.down, groundCheckExtraHeight, groundMask);
         onGround = raycastHit.collider != null;
+
     }
 
     private void CalculateJumpEndEarly() {
@@ -169,6 +170,48 @@ public class PlayerController : MonoBehaviour
             rb.gravityScale = Mathf.Lerp(defaultGravityScale, defaultGravityScale * apexGravityModifier, apexPoint);
         }
     }
+
+    #endregion
+
+    #region Gizmos
+
+    private void OnDrawGizmos() {
+        if (!boxCollider2D) return;
+        DrawGroundCheckGizmo();
+    }
+
+    private void DrawGroundCheckGizmo() {
+        Vector2 center = boxCollider2D.bounds.center;
+        Vector2 size = boxCollider2D.bounds.size - Vector3.right * groundCheckExtraHeight;
+        Vector2 direction = Vector2.down;
+        float distance = groundCheckExtraHeight;
+
+        Vector2[] corners = {
+            center + new Vector2(size.x, size.y) / 2 + direction * distance,
+            center + new Vector2(size.x, -size.y) / 2 + direction * distance,
+            center + new Vector2(-size.x, -size.y) / 2 + direction * distance,
+            center + new Vector2(-size.x, size.y) / 2 + direction * distance,
+        };
+
+        Gizmos.color = Color.magenta;
+        Gizmos.DrawLine(corners[0], corners[1]);
+        Gizmos.DrawLine(corners[1], corners[2]);
+        Gizmos.DrawLine(corners[2], corners[3]);
+        Gizmos.DrawLine(corners[3], corners[0]);
+    }
+
+    #endregion
+
+    #region WallJump
+
+    private bool touchingWall = false;
+
+    private void CalculateTouchingWallCheck() {
+        // float extraHeight = .5f;
+        // RaycastHit2D raycastHit = Physics2D.BoxCast(boxCollider2D.bounds.center, boxCollider2D.bounds.size - Vector3.right * extraHeight, 0f, Vector2.down, extraHeight, groundMask);
+        // touchingWall = raycastHit.collider != null;
+    }
+
 
     #endregion
 }

@@ -28,16 +28,20 @@ public class PlayerController : MonoBehaviour
         health = maxHealth;
         healthBar.SetMaxHealth(maxHealth);
         initialPosition = transform.position;
+        availableAirJumps = maxAirJumps;
     }
 
     private void FixedUpdate() {
         ReadInput();
+        CalculateDirection();
         CalculateGroundCheck();
+        CalculateWallCheck();
 
         CalculateWalk();
         CalculateJump();
         CalculateJumpEndEarly();
         CalculateJumpApex();
+        CalculateWallSlideDown();
 
         UpdateVelocity();
     }
@@ -74,7 +78,7 @@ public class PlayerController : MonoBehaviour
 
     #endregion
 
-    #region Move
+    #region UpdateVelocity
 
     private float defaultGravityScale;
 
@@ -83,10 +87,15 @@ public class PlayerController : MonoBehaviour
     private void UpdateVelocity() {
         Vector2 velocity = rb.velocity;
 
+        velocity.x = horizontalVelocity;
+
         if (jumpEndedEarly && rb.velocity.y > 0) {
             velocity.y = rb.velocity.y - jumpEndEarlyGravityModifier * Time.deltaTime;
         }
-        velocity.x = horizontalVelocity;
+        if (slidingDownTheWall) {
+            velocity.y = Mathf.Clamp(velocity.y, -wallSlidingMaxSpeed, float.MaxValue);
+        }
+        velocity.y = Mathf.Clamp(velocity.y, -maxFallingSpeed, float.MaxValue);
 
         rb.velocity = velocity;
     }
@@ -117,6 +126,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float acceleration = 70f;
     [SerializeField] private float deceleration = 70f;
     [SerializeField] private float apexSpeedBonus = 25f;
+    private Vector2 direction = Vector2.right;
 
     private void CalculateWalk() {
         if (input.x != 0) {
@@ -126,6 +136,16 @@ public class PlayerController : MonoBehaviour
         } else {
             horizontalVelocity = Mathf.MoveTowards(horizontalVelocity, 0, deceleration * Time.deltaTime);
         }
+    }
+
+    private void CalculateDirection() {
+        if (input.x > 0 && direction == Vector2.left) FlipDirection();
+        if (input.x < 0 && direction == Vector2.right) FlipDirection();
+    }
+
+    private void FlipDirection() {
+        direction = direction == Vector2.right ? Vector2.left : Vector2.right;
+        transform.localScale = new Vector3(-transform.localScale.x, transform.localScale.y, transform.localScale.z);
     }
 
     #endregion
@@ -138,23 +158,39 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float jumpApexThreshold = 10f;
     [SerializeField] private float apexGravityModifier = .5f;
     [SerializeField] private float jumpBufferTime = .1f;
+    [SerializeField] private float groundCheckExtraHeight = .5f;
+    [SerializeField] private float maxFallingSpeed = 25f;
+    [SerializeField] private float wallJumpHorizontalSpeed = 20f;
+    [SerializeField] private int maxAirJumps = 1;
     private bool jumpEndedEarly = false;
     private bool onGround = false;
     private bool hasBufferedJump => input.lastJumpDownTime + jumpBufferTime > Time.time;
     private float apexPoint;
+    private int availableAirJumps;
 
     private void CalculateJump() {
         if (onGround && (input.jumpJustPressed || hasBufferedJump) && rb.velocity.y == 0) {
-            jumpEndedEarly = false;
-            rb.velocity = new Vector2(rb.velocity.x, jumpForce) ;
-        } else {
+            Jump();
+        } else if(touchingWallFront && input.jumpJustPressed) {
+            Jump();
+            horizontalVelocity = rb.velocity.x - direction.x * wallJumpHorizontalSpeed;
+         }else if (availableAirJumps > 0 && input.jumpJustPressed) {
+            Jump();
+            availableAirJumps--;
         }
     }
 
+    private void Jump() {
+        jumpEndedEarly = false;
+        rb.velocity = new Vector2(rb.velocity.x, jumpForce);
+    }
+
     private void CalculateGroundCheck() {
-        float extraHeight = .5f;
-        RaycastHit2D raycastHit = Physics2D.BoxCast(boxCollider2D.bounds.center, boxCollider2D.bounds.size - Vector3.right * extraHeight, 0f, Vector2.down, extraHeight, groundMask);
+        RaycastHit2D raycastHit = Physics2D.BoxCast(boxCollider2D.bounds.center, boxCollider2D.bounds.size - Vector3.right * groundCheckExtraHeight, 0f, Vector2.down, groundCheckExtraHeight, groundMask);
         onGround = raycastHit.collider != null;
+        if (onGround) {
+            availableAirJumps = maxAirJumps;
+        }
     }
 
     private void CalculateJumpEndEarly() {
@@ -168,6 +204,70 @@ public class PlayerController : MonoBehaviour
             apexPoint = Mathf.InverseLerp(jumpApexThreshold, 0, Mathf.Abs(rb.velocity.y));
             rb.gravityScale = Mathf.Lerp(defaultGravityScale, defaultGravityScale * apexGravityModifier, apexPoint);
         }
+    }
+
+    #endregion
+
+    #region Gizmos
+
+    private void OnDrawGizmos() {
+        if (!boxCollider2D) return;
+        DrawGroundCheckGizmo();
+        DrawWallCheckGizmo();
+    }
+
+    private void DrawGroundCheckGizmo() {
+        Gizmos.color = onGround ? Color.magenta : Color.gray;
+        DrawBoxCastGizmo(
+            Vector3.right * groundCheckExtraHeight,
+            Vector2.down,
+            groundCheckExtraHeight
+        );
+    }
+
+    private void DrawWallCheckGizmo() {
+        Gizmos.color = touchingWallFront ? Color.blue : Color.gray;
+        DrawBoxCastGizmo(
+            Vector3.up * wallCheckExtraWidth,
+            direction,
+            wallCheckExtraWidth
+        );
+    }
+
+    private void DrawBoxCastGizmo(Vector3 sizeReduction, Vector2 direction, float distance) {
+        Vector2 center = boxCollider2D.bounds.center;
+        Vector2 size = boxCollider2D.bounds.size - sizeReduction;
+        
+        Vector2[] corners = {
+            center + new Vector2(size.x, size.y) / 2 + direction * distance,
+            center + new Vector2(size.x, -size.y) / 2 + direction * distance,
+            center + new Vector2(-size.x, -size.y) / 2 + direction * distance,
+            center + new Vector2(-size.x, size.y) / 2 + direction * distance,
+        };
+        
+        Gizmos.DrawLine(corners[0], corners[1]);
+        Gizmos.DrawLine(corners[1], corners[2]);
+        Gizmos.DrawLine(corners[2], corners[3]);
+        Gizmos.DrawLine(corners[3], corners[0]);
+    }
+
+    #endregion
+
+    #region WallJump
+
+    [Header("Wall Jump")] 
+    [SerializeField] float wallCheckExtraWidth = 0.2f;
+    [SerializeField] float wallSlidingMaxSpeed = 3f;
+    private bool touchingWallFront = false;
+    private bool slidingDownTheWall = false;
+
+    private void CalculateWallCheck() {
+        RaycastHit2D raycastHit = Physics2D.BoxCast(boxCollider2D.bounds.center, boxCollider2D.bounds.size - Vector3.right * wallCheckExtraWidth, 0f, direction, wallCheckExtraWidth, groundMask);
+        touchingWallFront = raycastHit.collider != null;
+    }
+
+    private void CalculateWallSlideDown() {
+        slidingDownTheWall = touchingWallFront && input.x != 0;
     }
 
     #endregion

@@ -160,6 +160,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float jumpBufferTime = .1f;
     [SerializeField] private float groundCheckExtraHeight = .5f;
     [SerializeField] private float maxFallingSpeed = 25f;
+    [SerializeField] private float wallJumpHorizontalSpeed = 20f;
     [SerializeField] private int maxAirJumps = 1;
     private bool jumpEndedEarly = false;
     private bool onGround = false;
@@ -170,10 +171,14 @@ public class PlayerController : MonoBehaviour
     private void CalculateJump() {
         if (onGround && (input.jumpJustPressed || hasBufferedJump) && rb.velocity.y == 0) {
             jumpEndedEarly = false;
-            rb.velocity = new Vector2(rb.velocity.x, jumpForce) ;
-        } else if (availableAirJumps > 0 && input.jumpJustPressed) {
+            rb.velocity = new Vector2(rb.velocity.x, jumpForce);
+        } else if(touchingWallFront && input.jumpJustPressed) {
             jumpEndedEarly = false;
-            rb.velocity = new Vector2(rb.velocity.x, jumpForce) ;
+            horizontalVelocity = rb.velocity.x - direction.x * wallJumpHorizontalSpeed;
+            rb.velocity = new Vector2(rb.velocity.x, jumpForce);
+        }else if (availableAirJumps > 0 && input.jumpJustPressed) {
+            jumpEndedEarly = false;
+            rb.velocity = new Vector2(rb.velocity.x, jumpForce);
             availableAirJumps--;
         }
     }
@@ -242,8 +247,7 @@ public class PlayerController : MonoBehaviour
             center + new Vector2(-size.x, size.y) / 2 + dir * distance,
         };
         
-        Gizmos.color = touchingWall ? Color.blue : Color.gray;
-        if (touchingWall) Gizmos.color = Color.green;
+        Gizmos.color = touchingWallFront ? Color.blue : Color.gray;
         Gizmos.DrawLine(corners[0], corners[1]);
         Gizmos.DrawLine(corners[1], corners[2]);
         Gizmos.DrawLine(corners[2], corners[3]);
@@ -257,16 +261,16 @@ public class PlayerController : MonoBehaviour
     [Header("Wall Jump")] 
     [SerializeField] float wallCheckExtraWidth = 0.2f;
     [SerializeField] float wallSlidingMaxSpeed = 3f;
-    private bool touchingWall = false;
+    private bool touchingWallFront = false;
     private bool slidingDownTheWall = false;
 
     private void CalculateWallCheck() {
         RaycastHit2D raycastHit = Physics2D.BoxCast(boxCollider2D.bounds.center, boxCollider2D.bounds.size - Vector3.right * wallCheckExtraWidth, 0f, direction, wallCheckExtraWidth, groundMask);
-        touchingWall = raycastHit.collider != null;
+        touchingWallFront = raycastHit.collider != null;
     }
 
     private void CalculateWallSlideDown() {
-        slidingDownTheWall = touchingWall && input.x != 0;
+        slidingDownTheWall = touchingWallFront && input.x != 0;
     }
 
     #endregion

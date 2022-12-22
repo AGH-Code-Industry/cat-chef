@@ -39,7 +39,7 @@ public class PlayerController : MonoBehaviour
         CalculateJumpEndEarly();
         CalculateJumpApex();
 
-        MovePlayer();
+        UpdateVelocity();
     }
 
     #region Health
@@ -78,14 +78,17 @@ public class PlayerController : MonoBehaviour
 
     private float defaultGravityScale;
 
-    private float horizonalVelocity, verticalVelocity;
+    private float horizontalVelocity;
 
-    private void MovePlayer() {
+    private void UpdateVelocity() {
+        Vector2 velocity = rb.velocity;
+
         if (jumpEndedEarly && rb.velocity.y > 0) {
-            rb.velocity = new Vector2(rb.velocity.x, rb.velocity.y - jumpEndEarlyGravityModifier * Time.deltaTime);
+            velocity.y = rb.velocity.y - jumpEndEarlyGravityModifier * Time.deltaTime;
         }
+        velocity.x = horizontalVelocity;
 
-        rb.transform.position += Vector3.right * horizonalVelocity * Time.deltaTime;
+        rb.velocity = velocity;
     }
 
     #endregion
@@ -117,11 +120,11 @@ public class PlayerController : MonoBehaviour
 
     private void CalculateWalk() {
         if (input.x != 0) {
-            horizonalVelocity += acceleration * Time.deltaTime * input.x;
-            horizonalVelocity = Mathf.Clamp(horizonalVelocity, -maxSpeed, maxSpeed);
-            horizonalVelocity += input.x * apexSpeedBonus * apexPoint * Time.deltaTime;
+            horizontalVelocity += acceleration * Time.deltaTime * input.x;
+            horizontalVelocity = Mathf.Clamp(horizontalVelocity, -maxSpeed, maxSpeed);
+            horizontalVelocity += input.x * apexSpeedBonus * apexPoint * Time.deltaTime;
         } else {
-            horizonalVelocity = Mathf.MoveTowards(horizonalVelocity, 0, deceleration * Time.deltaTime);
+            horizontalVelocity = Mathf.MoveTowards(horizontalVelocity, 0, deceleration * Time.deltaTime);
         }
     }
 

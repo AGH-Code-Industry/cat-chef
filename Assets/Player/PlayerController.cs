@@ -28,6 +28,7 @@ public class PlayerController : MonoBehaviour
         health = maxHealth;
         healthBar.SetMaxHealth(maxHealth);
         initialPosition = transform.position;
+        availableAirJumps = maxAirJumps;
     }
 
     private void FixedUpdate() {
@@ -86,14 +87,15 @@ public class PlayerController : MonoBehaviour
     private void UpdateVelocity() {
         Vector2 velocity = rb.velocity;
 
+        velocity.x = horizontalVelocity;
+
         if (jumpEndedEarly && rb.velocity.y > 0) {
             velocity.y = rb.velocity.y - jumpEndEarlyGravityModifier * Time.deltaTime;
         }
-        velocity.x = horizontalVelocity;
-
         if (slidingDownTheWall) {
-            velocity.y = Mathf.Clamp(velocity.y, -wallSlidingMaxVelocity, float.MaxValue);
+            velocity.y = Mathf.Clamp(velocity.y, -wallSlidingMaxSpeed, float.MaxValue);
         }
+        velocity.y = Mathf.Clamp(velocity.y, -maxFallingSpeed, float.MaxValue);
 
         rb.velocity = velocity;
     }
@@ -157,22 +159,31 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float apexGravityModifier = .5f;
     [SerializeField] private float jumpBufferTime = .1f;
     [SerializeField] private float groundCheckExtraHeight = .5f;
+    [SerializeField] private float maxFallingSpeed = 25f;
+    [SerializeField] private int maxAirJumps = 1;
     private bool jumpEndedEarly = false;
     private bool onGround = false;
     private bool hasBufferedJump => input.lastJumpDownTime + jumpBufferTime > Time.time;
     private float apexPoint;
+    private int availableAirJumps;
 
     private void CalculateJump() {
         if (onGround && (input.jumpJustPressed || hasBufferedJump) && rb.velocity.y == 0) {
             jumpEndedEarly = false;
             rb.velocity = new Vector2(rb.velocity.x, jumpForce) ;
-        } else {
+        } else if (availableAirJumps > 0 && input.jumpJustPressed) {
+            jumpEndedEarly = false;
+            rb.velocity = new Vector2(rb.velocity.x, jumpForce) ;
+            availableAirJumps--;
         }
     }
 
     private void CalculateGroundCheck() {
         RaycastHit2D raycastHit = Physics2D.BoxCast(boxCollider2D.bounds.center, boxCollider2D.bounds.size - Vector3.right * groundCheckExtraHeight, 0f, Vector2.down, groundCheckExtraHeight, groundMask);
         onGround = raycastHit.collider != null;
+        if (onGround) {
+            availableAirJumps = maxAirJumps;
+        }
     }
 
     private void CalculateJumpEndEarly() {
@@ -245,7 +256,7 @@ public class PlayerController : MonoBehaviour
 
     [Header("Wall Jump")] 
     [SerializeField] float wallCheckExtraWidth = 0.2f;
-    [SerializeField] float wallSlidingMaxVelocity = 3f;
+    [SerializeField] float wallSlidingMaxSpeed = 3f;
     private bool touchingWall = false;
     private bool slidingDownTheWall = false;
 

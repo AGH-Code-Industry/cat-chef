@@ -1668,8 +1668,9 @@ MonoBehaviour:
   apexGravityModifier: 0.5
   jumpBufferTime: 0.1
   groundCheckExtraHeight: 0.5
-  maxAirJumps: 1
   maxFallingSpeed: 25
+  wallJumpHorizontalSpeed: 20
+  maxAirJumps: 1
   wallCheckExtraWidth: 0.2
   wallSlidingMaxSpeed: 3
 --- !u!4 &648073697 stripped

@@ -170,17 +170,19 @@ public class PlayerController : MonoBehaviour
 
     private void CalculateJump() {
         if (onGround && (input.jumpJustPressed || hasBufferedJump) && rb.velocity.y == 0) {
-            jumpEndedEarly = false;
-            rb.velocity = new Vector2(rb.velocity.x, jumpForce);
+            Jump();
         } else if(touchingWallFront && input.jumpJustPressed) {
-            jumpEndedEarly = false;
+            Jump();
             horizontalVelocity = rb.velocity.x - direction.x * wallJumpHorizontalSpeed;
-            rb.velocity = new Vector2(rb.velocity.x, jumpForce);
-        }else if (availableAirJumps > 0 && input.jumpJustPressed) {
-            jumpEndedEarly = false;
-            rb.velocity = new Vector2(rb.velocity.x, jumpForce);
+         }else if (availableAirJumps > 0 && input.jumpJustPressed) {
+            Jump();
             availableAirJumps--;
         }
+    }
+
+    private void Jump() {
+        jumpEndedEarly = false;
+        rb.velocity = new Vector2(rb.velocity.x, jumpForce);
     }
 
     private void CalculateGroundCheck() {
@@ -215,39 +217,34 @@ public class PlayerController : MonoBehaviour
     }
 
     private void DrawGroundCheckGizmo() {
-        Vector2 center = boxCollider2D.bounds.center;
-        Vector2 size = boxCollider2D.bounds.size - Vector3.right * groundCheckExtraHeight;
-        Vector2 dir = Vector2.down;
-        float distance = groundCheckExtraHeight;
-
-        Vector2[] corners = {
-            center + new Vector2(size.x, size.y) / 2 + dir * distance,
-            center + new Vector2(size.x, -size.y) / 2 + dir * distance,
-            center + new Vector2(-size.x, -size.y) / 2 + dir * distance,
-            center + new Vector2(-size.x, size.y) / 2 + dir * distance,
-        };
-
         Gizmos.color = onGround ? Color.magenta : Color.gray;
-        Gizmos.DrawLine(corners[0], corners[1]);
-        Gizmos.DrawLine(corners[1], corners[2]);
-        Gizmos.DrawLine(corners[2], corners[3]);
-        Gizmos.DrawLine(corners[3], corners[0]);
+        DrawBoxCastGizmo(
+            Vector3.right * groundCheckExtraHeight,
+            Vector2.down,
+            groundCheckExtraHeight
+        );
     }
 
     private void DrawWallCheckGizmo() {
-        float distance = wallCheckExtraWidth;
-        Vector2 center = boxCollider2D.bounds.center;
-        Vector2 size = boxCollider2D.bounds.size - Vector3.up * distance;
-        Vector2 dir = direction;
+        Gizmos.color = touchingWallFront ? Color.blue : Color.gray;
+        DrawBoxCastGizmo(
+            Vector3.up * wallCheckExtraWidth,
+            direction,
+            wallCheckExtraWidth
+        );
+    }
 
+    private void DrawBoxCastGizmo(Vector3 sizeReduction, Vector2 direction, float distance) {
+        Vector2 center = boxCollider2D.bounds.center;
+        Vector2 size = boxCollider2D.bounds.size - sizeReduction;
+        
         Vector2[] corners = {
-            center + new Vector2(size.x, size.y) / 2 + dir * distance,
-            center + new Vector2(size.x, -size.y) / 2 + dir * distance,
-            center + new Vector2(-size.x, -size.y) / 2 + dir * distance,
-            center + new Vector2(-size.x, size.y) / 2 + dir * distance,
+            center + new Vector2(size.x, size.y) / 2 + direction * distance,
+            center + new Vector2(size.x, -size.y) / 2 + direction * distance,
+            center + new Vector2(-size.x, -size.y) / 2 + direction * distance,
+            center + new Vector2(-size.x, size.y) / 2 + direction * distance,
         };
         
-        Gizmos.color = touchingWallFront ? Color.blue : Color.gray;
         Gizmos.DrawLine(corners[0], corners[1]);
         Gizmos.DrawLine(corners[1], corners[2]);
         Gizmos.DrawLine(corners[2], corners[3]);

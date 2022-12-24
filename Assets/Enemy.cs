@@ -14,9 +14,9 @@ public class Enemy : MonoBehaviour
         healthBar.SetMaxHealth(maxHealth);
     }
 
-    private void OnCollisionEnter2D(Collision2D other) {
-        if (other.gameObject.tag == "Player") {
-            TakeDamage(other.gameObject.GetComponent<PlayerController>().damage);
+    private void OnTriggerEnter2D(Collider2D other) {
+        if (other.gameObject.tag == "Weapon") {
+            TakeDamage(other.gameObject.GetComponent<MeleeWeapon>().damage);
         }
     }
 

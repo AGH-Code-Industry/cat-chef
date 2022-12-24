@@ -5,6 +5,8 @@ using UnityEngine.InputSystem;
 
 public struct Input {
     public float x;
+    public bool attackDown;
+    public bool attackJustPressed;
     public bool jumpDown;
     public bool jumpJustPressed;
     public float lastJumpDownTime;
@@ -42,6 +44,8 @@ public class PlayerController : MonoBehaviour
         CalculateJumpEndEarly();
         CalculateJumpApex();
         CalculateWallSlideDown();
+
+        CalculateAttack();
 
         UpdateVelocity();
     }
@@ -107,15 +111,19 @@ public class PlayerController : MonoBehaviour
     private Input input;
 
     private void ReadInput() {
-        bool prevJumpDown = input.jumpDown;
         Vector2 inputVector = playerInputActions.Player.Movement.ReadValue<Vector2>();
         input.x = inputVector.x;
+
+        bool prevJumpDown = input.jumpDown;
         input.jumpDown = playerInputActions.Player.Jump.IsPressed();
         input.jumpJustPressed = !prevJumpDown && input.jumpDown;
-
         if (input.jumpDown) {
             input.lastJumpDownTime = Time.time;
         }
+
+        bool prevAttackDown = input.attackDown;
+        input.attackDown = playerInputActions.Player.Attack.IsPressed();
+        input.attackJustPressed = !prevAttackDown && input.attackDown;
     }
 
     #endregion
@@ -268,6 +276,26 @@ public class PlayerController : MonoBehaviour
 
     private void CalculateWallSlideDown() {
         slidingDownTheWall = touchingWallFront && input.x != 0;
+    }
+
+    #endregion
+
+    #region Attack
+
+    [SerializeField] private Transform weaponPivot;
+
+    private void CalculateAttack() {
+        PolygonCollider2D weaponCollider = weaponPivot.GetComponentInChildren<PolygonCollider2D>();
+        if (input.attackDown) {
+            weaponCollider.enabled = true;
+            weaponPivot.rotation = Quaternion.Euler(
+                weaponPivot.rotation.x, 
+                weaponPivot.rotation.y, 
+                Mathf.Sin(Time.time * 15) * 45
+            );
+        } else {
+            weaponCollider.enabled = false;
+        }
     }
 
     #endregion

@@ -194,7 +194,7 @@ public class PlayerController : MonoBehaviour
     }
 
     private void CalculateGroundCheck() {
-        RaycastHit2D raycastHit = Physics2D.BoxCast(boxCollider2D.bounds.center, boxCollider2D.bounds.size - Vector3.right * groundCheckExtraHeight, 0f, Vector2.down, groundCheckExtraHeight, groundMask);
+        RaycastHit2D raycastHit = Physics2D.BoxCast(boxCollider2D.bounds.center, boxCollider2D.bounds.size, 0f, Vector2.down, groundCheckExtraHeight, groundMask);
         onGround = raycastHit.collider != null;
         if (onGround) {
             availableAirJumps = maxAirJumps;
@@ -227,7 +227,7 @@ public class PlayerController : MonoBehaviour
     private void DrawGroundCheckGizmo() {
         Gizmos.color = onGround ? Color.magenta : Color.gray;
         DrawBoxCastGizmo(
-            Vector3.right * groundCheckExtraHeight,
+            Vector3.zero,
             Vector2.down,
             groundCheckExtraHeight
         );

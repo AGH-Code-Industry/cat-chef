@@ -496,12 +496,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 190460605}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.8, y: 0.25, z: -0.2}
+  m_LocalPosition: {x: 1, y: 0.1, z: -0.2}
   m_LocalScale: {x: 10, y: 10, z: 10}
   m_ConstrainProportionsScale: 1
   m_Children: []
-  m_Father: {fileID: 642579592}
-  m_RootOrder: 1
+  m_Father: {fileID: 437269700}
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &190460607
 SpriteRenderer:
@@ -562,7 +562,7 @@ PolygonCollider2D:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 190460605}
-  m_Enabled: 1
+  m_Enabled: 0
   m_Density: 1
   m_Material: {fileID: 0}
   m_IsTrigger: 1
@@ -585,6 +585,7 @@ PolygonCollider2D:
       - {x: 0.09997743, y: 0.0600347}
       - {x: 0.099999994, y: 0.099999994}
       - {x: 0.060060132, y: 0.09994332}
+      - {x: -0.008013223, y: 0.046471056}
       - {x: -0.09988285, y: -0.025693417}
 --- !u!114 &190460609
 MonoBehaviour:
@@ -1047,6 +1048,54 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3d3e534bb27628c4f8e31304adcc4790, type: 3}
+--- !u!1 &437269699
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 437269700}
+  - component: {fileID: 437269701}
+  m_Layer: 7
+  m_Name: Weapon pivot
+  m_TagString: Untagged
+  m_Icon: {fileID: -5397416234189338067, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &437269700
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 437269699}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 1
+  m_Children:
+  - {fileID: 190460606}
+  m_Father: {fileID: 642579592}
+  m_RootOrder: 1
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!111 &437269701
+Animation:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 437269699}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Animation: {fileID: 0}
+  m_Animations: []
+  m_WrapMode: 0
+  m_PlayAutomatically: 1
+  m_AnimatePhysics: 0
+  m_CullingType: 0
 --- !u!4 &440500644 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3151584120760583154, guid: b51d5303880a89a4ea1ba3db67125f15, type: 3}
@@ -1653,7 +1702,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 154556854}
-  - {fileID: 190460606}
+  - {fileID: 437269700}
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1836,6 +1885,7 @@ MonoBehaviour:
   maxAirJumps: 1
   wallCheckExtraWidth: 0.2
   wallSlidingMaxSpeed: 3
+  weaponPivot: {fileID: 437269700}
 --- !u!4 &648073697 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3151584120760583154, guid: 7c221101fc9bb5749b9162676d4faa38, type: 3}

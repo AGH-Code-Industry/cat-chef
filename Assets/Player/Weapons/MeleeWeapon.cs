@@ -6,10 +6,12 @@ using UnityEngine;
 public class MeleeWeapon : MonoBehaviour
 {
     public float damage = 20f;
-    new PolygonCollider2D collider;
+    private new PolygonCollider2D collider;
+    private Transform inner;
 
     private void Awake() {
-        collider = GetComponent<PolygonCollider2D>();
+        collider = GetComponentInChildren<PolygonCollider2D>();
+        inner = transform.GetChild(0);
     }
 
     private void OnDrawGizmos() {
@@ -19,11 +21,15 @@ public class MeleeWeapon : MonoBehaviour
     }
 
     private void DrawHitbox() {
-        Vector3[] points = collider.points.Select(point => transform.TransformPoint(point)).ToArray();
+        Vector3[] points = collider.points.Select(point => inner.TransformPoint(point)).ToArray();
         for (int i = 0; i < points.Length; i++) {
             Vector3 a = points[i];
             Vector3 b = points[i + 1 < points.Length ? i + 1 : 0];
             Gizmos.DrawLine(a, b);
         }
+    }
+
+    private void OnAttackEnd() {
+        transform.parent.SendMessage("OnAttackEnd");
     }
 }

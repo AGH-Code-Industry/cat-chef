@@ -22,6 +22,9 @@ public class PlayerController : MonoBehaviour
     private void Awake() {
         rb = GetComponent<Rigidbody2D>();
         boxCollider2D = GetComponent<BoxCollider2D>();
+        
+        weaponCollider = meleeWeapon.gameObject.GetComponentInChildren<PolygonCollider2D>();
+        weaponAnimator = meleeWeapon.GetComponent<Animator>();
 
         playerInputActions = new PlayerInputActions();
         playerInputActions.Enable();
@@ -56,7 +59,6 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private HealthBar healthBar;
     private float health;
     private Vector3 initialPosition;
-    public float damage = 20f;
 
     private void OnCollisionEnter2D(Collision2D other) {
         if (other.gameObject.tag == "Spikes") {
@@ -282,20 +284,20 @@ public class PlayerController : MonoBehaviour
 
     #region Attack
 
-    [SerializeField] private Transform weaponPivot;
+    [Header("Melee Weapon")]
+    [SerializeField] private MeleeWeapon meleeWeapon;
+    PolygonCollider2D weaponCollider;
+    Animator weaponAnimator;
 
     private void CalculateAttack() {
-        PolygonCollider2D weaponCollider = weaponPivot.GetComponentInChildren<PolygonCollider2D>();
         if (input.attackDown) {
             weaponCollider.enabled = true;
-            weaponPivot.rotation = Quaternion.Euler(
-                weaponPivot.rotation.x, 
-                weaponPivot.rotation.y, 
-                Mathf.Sin(Time.time * 15) * 45
-            );
-        } else {
-            weaponCollider.enabled = false;
-        }
+            weaponAnimator.Play("Attack");
+        } 
+    }
+
+    private void OnAttackEnd() {
+        weaponCollider.enabled = false;
     }
 
     #endregion

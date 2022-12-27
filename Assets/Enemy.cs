@@ -15,9 +15,9 @@ public class Enemy : MonoBehaviour
     }
 
     private void OnTriggerEnter2D(Collider2D other) {
-        if (other.gameObject.tag == "Weapon") {
-            TakeDamage(other.gameObject.GetComponent<MeleeWeapon>().damage);
-        }
+        MeleeWeapon meleeWeapon = other.transform.GetComponentInParent<MeleeWeapon>();
+        if (!meleeWeapon) return;
+        TakeDamage(meleeWeapon.damage);
     }
 
     private void TakeDamage(float amount) {

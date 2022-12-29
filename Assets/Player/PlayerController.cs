@@ -15,12 +15,14 @@ public class PlayerController : MonoBehaviour
     private Rigidbody2D rb;
     private BoxCollider2D boxCollider2D;
     private PlayerInputActions playerInputActions;
+    private Animator animator;
 
 
     private void Awake() {
         rb = GetComponent<Rigidbody2D>();
         boxCollider2D = GetComponent<BoxCollider2D>();
         
+        animator = GetComponent<Animator>();
         weaponCollider = meleeWeapon.gameObject.GetComponentInChildren<PolygonCollider2D>();
         weaponAnimator = meleeWeapon.GetComponent<Animator>();
 
@@ -47,6 +49,8 @@ public class PlayerController : MonoBehaviour
         CalculateWallSlideDown();
 
         CalculateAttack();
+
+        CalculateRoll();
 
         UpdateVelocity();
     }
@@ -133,6 +137,8 @@ public class PlayerController : MonoBehaviour
     private Vector2 direction = Vector2.right;
 
     private void CalculateWalk() {
+        if (isRolling) return;
+
         if (input.x != 0) {
             horizontalVelocity += acceleration * Time.deltaTime * input.x;
             horizontalVelocity = Mathf.Clamp(horizontalVelocity, -maxSpeed, maxSpeed);
@@ -143,6 +149,7 @@ public class PlayerController : MonoBehaviour
     }
 
     private void CalculateDirection() {
+        if (isRolling) return;
         if (input.x > 0 && direction == Vector2.left) FlipDirection();
         if (input.x < 0 && direction == Vector2.right) FlipDirection();
     }
@@ -298,6 +305,36 @@ public class PlayerController : MonoBehaviour
 
     private void OnAttackEnd() {
         weaponCollider.enabled = false;
+    }
+
+    #endregion
+    
+    #region Roll
+
+    [Header("Roll")]
+    [SerializeField] private float rollDistance = 6f;
+    [SerializeField] private float rollDurationSeconds = .3f;
+    private bool isRolling = false;
+    private float rollStartX;
+
+    public void OnRoll() {
+        if (onGround && rb.velocity.y == 0 && !isRolling) {
+            isRolling = true;
+            rollStartX = transform.position.x;
+            animator.Play("Roll");
+        }
+    }
+
+    private void CalculateRoll() {
+        if (!isRolling) return;
+
+        float distanceRolled = Mathf.Abs(rollStartX - transform.position.x);
+        if (touchingWallFront || distanceRolled >= rollDistance) {
+            isRolling = false;
+        } else {
+            float rollSpeed = rollDistance / rollDurationSeconds;
+            horizontalVelocity = rollSpeed * direction.x;
+        }
     }
 
     #endregion

@@ -81,15 +81,16 @@ public class PlayerController : MonoBehaviour
         health -= amount;
         health = Mathf.Clamp(health, 0, maxHealth);
         if (health == 0) {
-            // Die();
-            Debug.Log("Umarłeś");
-            transform.position = initialPosition;
-            health = maxHealth;
+            Die();
         }
         healthBar.SetHealth(health);
         
         void Die() {
-            Destroy(gameObject);
+            Debug.Log("Umarłeś");
+            transform.position = initialPosition;
+            health = maxHealth;
+            
+            // Destroy(gameObject);
         }
     }
 

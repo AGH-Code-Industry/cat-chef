@@ -99,6 +99,7 @@ GameObject:
   - component: {fileID: 4709121947871027050}
   - component: {fileID: 4709121947871027048}
   - component: {fileID: 4709121947871027054}
+  - component: {fileID: 8105449162206243230}
   m_Layer: 7
   m_Name: Player
   m_TagString: Player
@@ -137,14 +138,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 100
   healthBar: {fileID: 0}
-  damage: 20
   maxSpeed: 10
   acceleration: 70
   deceleration: 70
   apexSpeedBonus: 25
   groundMask:
     serializedVersion: 2
-    m_Bits: 64
+    m_Bits: 320
   jumpForce: 25
   jumpEndEarlyGravityModifier: 100
   jumpApexThreshold: 10
@@ -157,6 +157,11 @@ MonoBehaviour:
   wallCheckExtraWidth: 0.2
   wallSlidingMaxSpeed: 3
   meleeWeapon: {fileID: 5267613507432235367}
+  rollDistance: 6
+  rollDurationSeconds: 0.3
+  rollThroughMask:
+    serializedVersion: 2
+    m_Bits: 256
 --- !u!61 &4709121947871027049
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -313,7 +318,7 @@ Animator:
   m_GameObject: {fileID: 4709121947871027046}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 53d1756d9e1f25547915bf77cf6dc357, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -323,6 +328,64 @@ Animator:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorControllerStateOnDisable: 0
+--- !u!114 &8105449162206243230
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4709121947871027046}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Actions: {fileID: -944628639613478452, guid: 31d37e90406eff3488a7417608122222, type: 3}
+  m_NotificationBehavior: 0
+  m_UIInputModule: {fileID: 0}
+  m_DeviceLostEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_DeviceRegainedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ControlsChangedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ActionEvents:
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 11500000, guid: cfe6393ac1b31044c831762064d1457a, type: 3}
+        m_TargetAssemblyTypeName: UnityEngine.Object, UnityEngine
+        m_MethodName: set_name
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: CalculateJump
+          m_BoolArgument: 0
+        m_CallState: 1
+    m_ActionId: 7f9022ec-93a6-4098-8c08-1fe0b04a6702
+    m_ActionName: Player/Jump[/Keyboard/space]
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 3b1280e3-a889-4551-a326-0ea4d0de7477
+    m_ActionName: Player/Movement[/Keyboard/w,/Keyboard/s,/Keyboard/a,/Keyboard/d]
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 98ae8830-d02f-4cd4-9065-34a48478fbf4
+    m_ActionName: Player/Attack[/Keyboard/rightCtrl]
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 8c0e66b2-01d4-48c5-852f-f8cd04c90f4d
+    m_ActionName: Player/Roll[/Keyboard/shift]
+  m_NeverAutoSwitchControlSchemes: 0
+  m_DefaultControlScheme: 
+  m_DefaultActionMap: Player
+  m_SplitScreenIndex: -1
+  m_Camera: {fileID: 0}
 --- !u!1 &4709121949031897454
 GameObject:
   m_ObjectHideFlags: 0

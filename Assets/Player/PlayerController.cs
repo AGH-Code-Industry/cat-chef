@@ -1,14 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 public struct Input {
     public float x;
     public bool attackDown;
-    public bool attackJustPressed;
     public bool jumpDown;
-    public bool jumpJustPressed;
     public float lastJumpDownTime;
 }
 
@@ -17,14 +15,23 @@ public class PlayerController : MonoBehaviour
     private Rigidbody2D rb;
     private BoxCollider2D boxCollider2D;
     private PlayerInputActions playerInputActions;
+    private Animator animator;
 
 
     private void Awake() {
         rb = GetComponent<Rigidbody2D>();
         boxCollider2D = GetComponent<BoxCollider2D>();
         
+        animator = GetComponent<Animator>();
         weaponCollider = meleeWeapon.gameObject.GetComponentInChildren<PolygonCollider2D>();
         weaponAnimator = meleeWeapon.GetComponent<Animator>();
+
+        rollThroughLayers = Enumerable
+            .Range(0, 32)
+            .Select(index => 1 << index)
+            .Where(bitAtLayerIndex => (rollThroughMask.value & bitAtLayerIndex) != 0)
+            .Select(layerMask => (int)Mathf.Log(layerMask, 2))
+            .ToArray();
 
         playerInputActions = new PlayerInputActions();
         playerInputActions.Enable();
@@ -34,6 +41,8 @@ public class PlayerController : MonoBehaviour
         healthBar.SetMaxHealth(maxHealth);
         initialPosition = transform.position;
         availableAirJumps = maxAirJumps;
+
+        playerInputActions.Player.Jump.canceled += context => jumpEndedEarly = true;
     }
 
     private void FixedUpdate() {
@@ -43,19 +52,21 @@ public class PlayerController : MonoBehaviour
         CalculateWallCheck();
 
         CalculateWalk();
-        CalculateJump();
-        CalculateJumpEndEarly();
+        CalculateQueueJump();
         CalculateJumpApex();
         CalculateWallSlideDown();
 
         CalculateAttack();
+
+        CalculateRoll();
 
         UpdateVelocity();
     }
 
     #region Health
 
-    [Header("Health")] [SerializeField] private float maxHealth = 100f;
+    [Header("Health")]
+    [SerializeField] private float maxHealth = 100f;
     [SerializeField] private HealthBar healthBar;
     private float health;
     private Vector3 initialPosition;
@@ -70,17 +81,19 @@ public class PlayerController : MonoBehaviour
         health -= amount;
         health = Mathf.Clamp(health, 0, maxHealth);
         if (health == 0) {
-            // Die();
+            Die();
+        }
+        healthBar.SetHealth(health);
+        
+        void Die() {
             Debug.Log("Umarłeś");
             transform.position = initialPosition;
             health = maxHealth;
+            
+            // Destroy(gameObject);
         }
-        healthBar.SetHealth(health);
     }
 
-    private void Die() {
-        Destroy(gameObject);
-    }
 
     #endregion
 
@@ -116,29 +129,27 @@ public class PlayerController : MonoBehaviour
         Vector2 inputVector = playerInputActions.Player.Movement.ReadValue<Vector2>();
         input.x = inputVector.x;
 
-        bool prevJumpDown = input.jumpDown;
-        input.jumpDown = playerInputActions.Player.Jump.IsPressed();
-        input.jumpJustPressed = !prevJumpDown && input.jumpDown;
-        if (input.jumpDown) {
+        if (playerInputActions.Player.Jump.IsPressed()) {
             input.lastJumpDownTime = Time.time;
         }
 
-        bool prevAttackDown = input.attackDown;
         input.attackDown = playerInputActions.Player.Attack.IsPressed();
-        input.attackJustPressed = !prevAttackDown && input.attackDown;
     }
 
     #endregion
 
     #region Walk
 
-    [Header("Move")] [SerializeField] private float maxSpeed = 10f;
+    [Header("Move")]
+    [SerializeField] private float maxSpeed = 10f;
     [SerializeField] private float acceleration = 70f;
     [SerializeField] private float deceleration = 70f;
     [SerializeField] private float apexSpeedBonus = 25f;
     private Vector2 direction = Vector2.right;
 
     private void CalculateWalk() {
+        if (rolling) return;
+
         if (input.x != 0) {
             horizontalVelocity += acceleration * Time.deltaTime * input.x;
             horizontalVelocity = Mathf.Clamp(horizontalVelocity, -maxSpeed, maxSpeed);
@@ -149,6 +160,7 @@ public class PlayerController : MonoBehaviour
     }
 
     private void CalculateDirection() {
+        if (rolling) return;
         if (input.x > 0 && direction == Vector2.left) FlipDirection();
         if (input.x < 0 && direction == Vector2.right) FlipDirection();
     }
@@ -162,7 +174,8 @@ public class PlayerController : MonoBehaviour
 
     #region Jump
 
-    [Header("Jump")] [SerializeField] private LayerMask groundMask;
+    [Header("Jump")]
+    [SerializeField] private LayerMask groundMask;
     [SerializeField] private float jumpForce = 25f;
     [SerializeField] private float jumpEndEarlyGravityModifier = 100f;
     [SerializeField] private float jumpApexThreshold = 10f;
@@ -178,13 +191,13 @@ public class PlayerController : MonoBehaviour
     private float apexPoint;
     private int availableAirJumps;
 
-    private void CalculateJump() {
-        if (onGround && (input.jumpJustPressed || hasBufferedJump) && rb.velocity.y == 0) {
+    public void OnJump() {
+        if (onGround && rb.velocity.y == 0) {
             Jump();
-        } else if(touchingWallFront && input.jumpJustPressed) {
+        } else if(touchingWallFront ) {
             Jump();
             horizontalVelocity = rb.velocity.x - direction.x * wallJumpHorizontalSpeed;
-         }else if (availableAirJumps > 0 && input.jumpJustPressed) {
+         }else if (availableAirJumps > 0 ) {
             Jump();
             availableAirJumps--;
         }
@@ -203,10 +216,10 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void CalculateJumpEndEarly() {
-        if (!jumpEndedEarly && !input.jumpDown && rb.velocity.y > 0) {
-            jumpEndedEarly = true;
-        }
+    public void CalculateQueueJump() {
+        if (onGround && hasBufferedJump && rb.velocity.y == 0) {
+            Jump();
+        } 
     }
 
     private void CalculateJumpApex() {
@@ -224,41 +237,41 @@ public class PlayerController : MonoBehaviour
         if (!boxCollider2D) return;
         DrawGroundCheckGizmo();
         DrawWallCheckGizmo();
-    }
 
-    private void DrawGroundCheckGizmo() {
-        Gizmos.color = onGround ? Color.magenta : Color.gray;
-        DrawBoxCastGizmo(
-            Vector3.zero,
-            Vector2.down,
-            groundCheckExtraHeight
-        );
-    }
+        void DrawGroundCheckGizmo() {
+            Gizmos.color = onGround ? Color.magenta : Color.gray;
+            DrawBoxCastGizmo(
+                Vector3.zero,
+                Vector2.down,
+                groundCheckExtraHeight
+            );
+        }
 
-    private void DrawWallCheckGizmo() {
-        Gizmos.color = touchingWallFront ? Color.blue : Color.gray;
-        DrawBoxCastGizmo(
-            Vector3.up * wallCheckExtraWidth,
-            direction,
-            wallCheckExtraWidth
-        );
-    }
+        void DrawWallCheckGizmo() {
+            Gizmos.color = touchingWallFront ? Color.blue : Color.gray;
+            DrawBoxCastGizmo(
+                Vector3.up * wallCheckExtraWidth,
+                direction,
+                wallCheckExtraWidth
+            );
+        }
 
-    private void DrawBoxCastGizmo(Vector3 sizeReduction, Vector2 direction, float distance) {
-        Vector2 center = boxCollider2D.bounds.center;
-        Vector2 size = boxCollider2D.bounds.size - sizeReduction;
-        
-        Vector2[] corners = {
-            center + new Vector2(size.x, size.y) / 2 + direction * distance,
-            center + new Vector2(size.x, -size.y) / 2 + direction * distance,
-            center + new Vector2(-size.x, -size.y) / 2 + direction * distance,
-            center + new Vector2(-size.x, size.y) / 2 + direction * distance,
-        };
-        
-        Gizmos.DrawLine(corners[0], corners[1]);
-        Gizmos.DrawLine(corners[1], corners[2]);
-        Gizmos.DrawLine(corners[2], corners[3]);
-        Gizmos.DrawLine(corners[3], corners[0]);
+        void DrawBoxCastGizmo(Vector3 sizeReduction, Vector2 direction, float distance) {
+            Vector2 center = boxCollider2D.bounds.center;
+            Vector2 size = boxCollider2D.bounds.size - sizeReduction;
+            
+            Vector2[] corners = {
+                center + new Vector2(size.x, size.y) / 2 + direction * distance,
+                center + new Vector2(size.x, -size.y) / 2 + direction * distance,
+                center + new Vector2(-size.x, -size.y) / 2 + direction * distance,
+                center + new Vector2(-size.x, size.y) / 2 + direction * distance,
+            };
+            
+            Gizmos.DrawLine(corners[0], corners[1]);
+            Gizmos.DrawLine(corners[1], corners[2]);
+            Gizmos.DrawLine(corners[2], corners[3]);
+            Gizmos.DrawLine(corners[3], corners[0]);
+        }
     }
 
     #endregion
@@ -269,11 +282,13 @@ public class PlayerController : MonoBehaviour
     [SerializeField] float wallCheckExtraWidth = 0.2f;
     [SerializeField] float wallSlidingMaxSpeed = 3f;
     private bool touchingWallFront = false;
+    private int? frontObstacleLayer;
     private bool slidingDownTheWall = false;
 
     private void CalculateWallCheck() {
         RaycastHit2D raycastHit = Physics2D.BoxCast(boxCollider2D.bounds.center, boxCollider2D.bounds.size - Vector3.right * wallCheckExtraWidth, 0f, direction, wallCheckExtraWidth, groundMask);
         touchingWallFront = raycastHit.collider != null;
+        frontObstacleLayer = raycastHit.collider?.gameObject.layer;
     }
 
     private void CalculateWallSlideDown() {
@@ -298,6 +313,55 @@ public class PlayerController : MonoBehaviour
 
     private void OnAttackEnd() {
         weaponCollider.enabled = false;
+    }
+
+    #endregion
+    
+    #region Roll
+
+    [Header("Roll")]
+    [SerializeField] private float rollDistance = 6f;
+    [SerializeField] private float rollDurationSeconds = .3f;
+    [SerializeField] private LayerMask rollThroughMask;
+    private int[] rollThroughLayers;
+    private bool rolling = false;
+    private float rollStartX;
+    private float lastDistanceRolled = 0;
+
+    public void OnRoll() {
+        if (onGround && rb.velocity.y == 0 && !rolling) {
+            rolling = true;
+            rollStartX = transform.position.x;
+            animator.Play("Roll");
+            foreach (int layer in rollThroughLayers) {
+                Physics2D.IgnoreLayerCollision(gameObject.layer, layer, true); 
+            }        
+        }
+    }
+
+    private void CalculateRoll() {
+        if (!rolling) return;
+
+        float distanceRolled = Mathf.Abs(rollStartX - transform.position.x);
+        if (distanceRolled >= rollDistance || touchingNotRollableThroughObstacle()) {
+            rolling = false;
+            foreach (int layer in rollThroughLayers) {
+                Physics2D.IgnoreLayerCollision(gameObject.layer, layer, false);
+            }
+        } else {
+            float rollSpeed = rollDistance / rollDurationSeconds;
+            horizontalVelocity = rollSpeed * direction.x;
+        }
+        lastDistanceRolled = distanceRolled;
+
+        bool touchingNotRollableThroughObstacle() {
+            LayerMask commonMask = groundMask & rollThroughMask;
+            LayerMask notInBothMask = ~commonMask;
+            LayerMask groundNotRollThroughMask = groundMask & notInBothMask;
+
+            LayerMask frontObstacleMask = 1 << (frontObstacleLayer ??= 0);
+            return (frontObstacleMask & groundNotRollThroughMask) != 0;
+        }
     }
 
     #endregion

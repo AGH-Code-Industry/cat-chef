@@ -6,9 +6,7 @@ using UnityEngine.InputSystem;
 public struct Input {
     public float x;
     public bool attackDown;
-    public bool attackJustPressed;
     public bool jumpDown;
-    public bool jumpJustPressed;
     public float lastJumpDownTime;
 }
 
@@ -43,7 +41,7 @@ public class PlayerController : MonoBehaviour
         CalculateWallCheck();
 
         CalculateWalk();
-        CalculateJump();
+        CalculateQueueJump();
         CalculateJumpEndEarly();
         CalculateJumpApex();
         CalculateWallSlideDown();
@@ -116,16 +114,12 @@ public class PlayerController : MonoBehaviour
         Vector2 inputVector = playerInputActions.Player.Movement.ReadValue<Vector2>();
         input.x = inputVector.x;
 
-        bool prevJumpDown = input.jumpDown;
         input.jumpDown = playerInputActions.Player.Jump.IsPressed();
-        input.jumpJustPressed = !prevJumpDown && input.jumpDown;
         if (input.jumpDown) {
             input.lastJumpDownTime = Time.time;
         }
 
-        bool prevAttackDown = input.attackDown;
         input.attackDown = playerInputActions.Player.Attack.IsPressed();
-        input.attackJustPressed = !prevAttackDown && input.attackDown;
     }
 
     #endregion
@@ -178,13 +172,13 @@ public class PlayerController : MonoBehaviour
     private float apexPoint;
     private int availableAirJumps;
 
-    private void CalculateJump() {
-        if (onGround && (input.jumpJustPressed || hasBufferedJump) && rb.velocity.y == 0) {
+    public void OnJump() {
+        if (onGround && rb.velocity.y == 0) {
             Jump();
-        } else if(touchingWallFront && input.jumpJustPressed) {
+        } else if(touchingWallFront ) {
             Jump();
             horizontalVelocity = rb.velocity.x - direction.x * wallJumpHorizontalSpeed;
-         }else if (availableAirJumps > 0 && input.jumpJustPressed) {
+         }else if (availableAirJumps > 0 ) {
             Jump();
             availableAirJumps--;
         }
@@ -201,6 +195,12 @@ public class PlayerController : MonoBehaviour
         if (onGround) {
             availableAirJumps = maxAirJumps;
         }
+    }
+
+    public void CalculateQueueJump() {
+        if (onGround && hasBufferedJump && rb.velocity.y == 0) {
+            Jump();
+        } 
     }
 
     private void CalculateJumpEndEarly() {

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -25,6 +26,13 @@ public class PlayerController : MonoBehaviour
         animator = GetComponent<Animator>();
         weaponCollider = meleeWeapon.gameObject.GetComponentInChildren<PolygonCollider2D>();
         weaponAnimator = meleeWeapon.GetComponent<Animator>();
+
+        rollThroughLayers = Enumerable
+            .Range(0, 32)
+            .Select(index => 1 << index)
+            .Where(bitAtLayerIndex => (rollThroughMask.value & bitAtLayerIndex) != 0)
+            .Select(layerMask => (int)Mathf.Log(layerMask, 2))
+            .ToArray();
 
         playerInputActions = new PlayerInputActions();
         playerInputActions.Enable();
@@ -276,11 +284,13 @@ public class PlayerController : MonoBehaviour
     [SerializeField] float wallCheckExtraWidth = 0.2f;
     [SerializeField] float wallSlidingMaxSpeed = 3f;
     private bool touchingWallFront = false;
+    private int? touchingWallFrontLayer;
     private bool slidingDownTheWall = false;
 
     private void CalculateWallCheck() {
         RaycastHit2D raycastHit = Physics2D.BoxCast(boxCollider2D.bounds.center, boxCollider2D.bounds.size - Vector3.right * wallCheckExtraWidth, 0f, direction, wallCheckExtraWidth, groundMask);
         touchingWallFront = raycastHit.collider != null;
+        touchingWallFrontLayer = raycastHit.collider?.gameObject.layer;
     }
 
     private void CalculateWallSlideDown() {
@@ -314,30 +324,44 @@ public class PlayerController : MonoBehaviour
     [Header("Roll")]
     [SerializeField] private float rollDistance = 6f;
     [SerializeField] private float rollDurationSeconds = .3f;
-    [SerializeField] private LayerMask enemyLayer;
+    [SerializeField] private LayerMask rollThroughMask;
+    private int[] rollThroughLayers;
     private bool isRolling = false;
     private float rollStartX;
+    private float lastDistanceRolled = 0;
 
     public void OnRoll() {
         if (onGround && rb.velocity.y == 0 && !isRolling) {
             isRolling = true;
             rollStartX = transform.position.x;
             animator.Play("Roll");
-            Physics2D.IgnoreLayerCollision(gameObject.layer, (int)Mathf.Log(enemyLayer.value, 2)); 
+            foreach (int layer in rollThroughLayers) {
+                Physics2D.IgnoreLayerCollision(gameObject.layer, layer, true); 
+            }        
         }
     }
 
     private void CalculateRoll() {
         if (!isRolling) return;
 
+        LayerMask commonMask = groundMask & rollThroughMask;
+        LayerMask notInBothMask = ~commonMask;
+        LayerMask groundMaskNotInRollThroughMask = groundMask & notInBothMask;
+
+        LayerMask touchingWallFrontMask = 1 << (touchingWallFrontLayer ??= 0);
+        bool touchingWallFrontNotRollableThrough = (touchingWallFrontMask & groundMaskNotInRollThroughMask) != 0;
+
         float distanceRolled = Mathf.Abs(rollStartX - transform.position.x);
-        if (touchingWallFront || distanceRolled >= rollDistance) {
+        if (distanceRolled >= rollDistance || touchingWallFrontNotRollableThrough) {
             isRolling = false;
-            Physics2D.IgnoreLayerCollision(gameObject.layer, (int)Mathf.Log(enemyLayer.value, 2), false); 
+            foreach (int layer in rollThroughLayers) {
+                Physics2D.IgnoreLayerCollision(gameObject.layer, layer, false); 
+            }
         } else {
             float rollSpeed = rollDistance / rollDurationSeconds;
             horizontalVelocity = rollSpeed * direction.x;
         }
+        lastDistanceRolled = distanceRolled;
     }
 
     #endregion

@@ -144,7 +144,7 @@ MonoBehaviour:
   apexSpeedBonus: 25
   groundMask:
     serializedVersion: 2
-    m_Bits: 64
+    m_Bits: 320
   jumpForce: 25
   jumpEndEarlyGravityModifier: 100
   jumpApexThreshold: 10
@@ -159,6 +159,9 @@ MonoBehaviour:
   meleeWeapon: {fileID: 5267613507432235367}
   rollDistance: 6
   rollDurationSeconds: 0.3
+  rollThroughMask:
+    serializedVersion: 2
+    m_Bits: 256
 --- !u!61 &4709121947871027049
 BoxCollider2D:
   m_ObjectHideFlags: 0

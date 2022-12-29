@@ -314,6 +314,7 @@ public class PlayerController : MonoBehaviour
     [Header("Roll")]
     [SerializeField] private float rollDistance = 6f;
     [SerializeField] private float rollDurationSeconds = .3f;
+    [SerializeField] private LayerMask enemyLayer;
     private bool isRolling = false;
     private float rollStartX;
 
@@ -322,6 +323,7 @@ public class PlayerController : MonoBehaviour
             isRolling = true;
             rollStartX = transform.position.x;
             animator.Play("Roll");
+            Physics2D.IgnoreLayerCollision(gameObject.layer, (int)Mathf.Log(enemyLayer.value, 2)); 
         }
     }
 
@@ -331,6 +333,7 @@ public class PlayerController : MonoBehaviour
         float distanceRolled = Mathf.Abs(rollStartX - transform.position.x);
         if (touchingWallFront || distanceRolled >= rollDistance) {
             isRolling = false;
+            Physics2D.IgnoreLayerCollision(gameObject.layer, (int)Mathf.Log(enemyLayer.value, 2), false); 
         } else {
             float rollSpeed = rollDistance / rollDurationSeconds;
             horizontalVelocity = rollSpeed * direction.x;

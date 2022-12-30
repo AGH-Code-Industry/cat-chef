@@ -3320,6 +3320,17 @@ PrefabInstance:
       propertyPath: m_PlayAutomatically
       value: 1
       objectReference: {fileID: 0}
-    m_RemovedComponents:
-    - {fileID: 5267613507432235365, guid: 13401d325bbf44c46967dbed47cc9d7a, type: 3}
+    - target: {fileID: 6649287699806019236, guid: 13401d325bbf44c46967dbed47cc9d7a, type: 3}
+      propertyPath: m_Distance
+      value: 0.8779702
+      objectReference: {fileID: 0}
+    - target: {fileID: 6649287699806019236, guid: 13401d325bbf44c46967dbed47cc9d7a, type: 3}
+      propertyPath: m_ConnectedAnchor.x
+      value: -0.024000049
+      objectReference: {fileID: 0}
+    - target: {fileID: 6649287699806019236, guid: 13401d325bbf44c46967dbed47cc9d7a, type: 3}
+      propertyPath: m_ConnectedAnchor.y
+      value: -4.9
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 13401d325bbf44c46967dbed47cc9d7a, type: 3}

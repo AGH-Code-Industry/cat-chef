@@ -23,8 +23,9 @@ public class PlayerController : MonoBehaviour
         boxCollider2D = GetComponent<BoxCollider2D>();
         
         animator = GetComponent<Animator>();
-        weaponCollider = meleeWeapon.gameObject.GetComponentInChildren<PolygonCollider2D>();
-        weaponAnimator = meleeWeapon.GetComponent<Animator>();
+        weapon = GetComponentInChildren<Weapon>();
+        weaponCollider = weapon.gameObject.GetComponentInChildren<PolygonCollider2D>();
+        weaponAnimator = weapon.GetComponent<Animator>();
 
         rollThroughLayers = Enumerable
             .Range(0, 32)
@@ -299,8 +300,8 @@ public class PlayerController : MonoBehaviour
 
     #region Attack
 
-    [Header("Melee Weapon")]
-    [SerializeField] private MeleeWeapon meleeWeapon;
+    [Header("Weapon")]
+    private Weapon weapon;
     PolygonCollider2D weaponCollider;
     Animator weaponAnimator;
 

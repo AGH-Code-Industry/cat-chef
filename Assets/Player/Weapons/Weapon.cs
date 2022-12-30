@@ -1,9 +1,9 @@
 using System.Collections;
-using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
-public class MeleeWeapon : MonoBehaviour
+public abstract class Weapon : MonoBehaviour
 {
     public float damage = 20f;
     private new PolygonCollider2D collider;

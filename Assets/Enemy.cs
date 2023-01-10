@@ -2,10 +2,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Enemy : MonoBehaviour
+public class Enemy : MonoBehaviour, IDamageDealer
 {
     [SerializeField] private HealthBar healthBar;
     [SerializeField] private float maxHealth = 100f;
+    public float damage { get; set; } = 20f;
+
 
     private float health;
 

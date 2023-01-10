@@ -52,6 +52,7 @@ public class PlayerController : MonoBehaviour
         CalculateWallCheck();
 
         CalculateWalk();
+        CalculateWallJumpHorizontalBoost();
         CalculateQueueJump();
         CalculateJumpApex();
         CalculateWallSlideDown();
@@ -106,7 +107,7 @@ public class PlayerController : MonoBehaviour
     private void UpdateVelocity() {
         Vector2 velocity = rb.velocity;
 
-        velocity.x = horizontalVelocity;
+        velocity.x = horizontalVelocity + wallJumpHorizontalBoost;
 
         if (jumpEndedEarly && rb.velocity.y > 0) {
             velocity.y = rb.velocity.y - jumpEndEarlyGravityModifier * Time.deltaTime;
@@ -190,13 +191,14 @@ public class PlayerController : MonoBehaviour
     private bool hasBufferedJump => input.lastJumpDownTime + jumpBufferTime > Time.time;
     private float apexPoint;
     private int availableAirJumps;
+    private float wallJumpHorizontalBoost = 0f;
 
     public void OnJump() {
         if (onGround && rb.velocity.y == 0) {
             Jump();
         } else if(touchingWallFront ) {
             Jump();
-            horizontalVelocity = rb.velocity.x - direction.x * wallJumpHorizontalSpeed;
+            wallJumpHorizontalBoost = (-1) * direction.x * wallJumpHorizontalSpeed;
          }else if (availableAirJumps > 0 ) {
             Jump();
             availableAirJumps--;
@@ -227,6 +229,10 @@ public class PlayerController : MonoBehaviour
             apexPoint = Mathf.InverseLerp(jumpApexThreshold, 0, Mathf.Abs(rb.velocity.y));
             rb.gravityScale = Mathf.Lerp(defaultGravityScale, defaultGravityScale * apexGravityModifier, apexPoint);
         }
+    }
+
+    private void CalculateWallJumpHorizontalBoost() {
+        wallJumpHorizontalBoost = Mathf.MoveTowards(wallJumpHorizontalBoost, 0, deceleration * Time.deltaTime);
     }
 
     #endregion

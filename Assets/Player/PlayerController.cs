@@ -73,8 +73,8 @@ public class PlayerController : MonoBehaviour
     private Vector3 initialPosition;
 
     private void OnCollisionEnter2D(Collision2D other) {
-        if (other.gameObject.tag == "Spikes") {
-            TakeDamage(other.gameObject.GetComponent<Spikes>().damage);
+        if (other.gameObject.tag == "Spikes" || other.gameObject.tag == "Enemy") {
+            TakeDamage(other.gameObject.GetComponent<IDamageDealer>().damage);
         }
     }
 

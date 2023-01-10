@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Spikes : MonoBehaviour
+public class Spikes : MonoBehaviour, IDamageDealer
 {
-        public float damage = 20f;
+        public float damage { get; set; } = 20f;
 }
